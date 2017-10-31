@@ -12,22 +12,45 @@ namespace SupportBank
         private List<Account> _accounts = new List<Account>();
         private List<Transaction> _allTransactions = new List<Transaction>();
 
-        public AccountsManager(string filePath)
+        public AccountsManager(string pathToTransactionsFile)
         {
-            ImportTransactionsFromFile(filePath);
+            ImportTransactionsFromFile(pathToTransactionsFile);
             CreateAccounts();
+        }
+
+        public List<string> GetBalanceForEveryAccount()
+        {
+            return _accounts.Select(a => $"{a.Name}: {a.Balance:C} (+{a.CreditTotal:C}C, -{a.DebitTotal:C}D)").ToList();
+        }
+
+        public Account GetAccountByName(string name)
+        {
+            return _accounts.Where(a => a.Name.ToLower() == name.ToLower()).SingleOrDefault();
         }
 
         private void ImportTransactionsFromFile(string filePath)
         {
+
             if (File.Exists(filePath))
             {
-                // read in file contents, skipping over first header line, and split each line by comma delimiter
-                List<string[]> lines = File.ReadLines(filePath).Skip(1).Select(line => line.Split(',')).ToList();
+                try
+                {
+                    // read in file contents, skipping over first header line, and split each line by comma delimiter
+                    List<string[]> lines = File.ReadLines(filePath).Skip(1).Select(line => line.Split(',')).ToList();
 
-                // convert values in each string[] to transaction obj and add to final list
-                lines.ForEach(l => _allTransactions.Add(new Transaction(Convert.ToDateTime(l[0]), l[1], l[2], l[3], float.Parse(l[4]))));
+                    // convert values in each string[] to transaction obj and add to final list
+                    lines.ForEach(l => _allTransactions.Add(new Transaction(Convert.ToDateTime(l[0]), l[1], l[2], l[3], float.Parse(l[4]))));
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
             }
+            else
+            {
+                throw new FileNotFoundException($"The transaction file \"{filePath}\" was not found.");
+            }
+
         }
 
         private void CreateAccounts()
@@ -49,5 +72,6 @@ namespace SupportBank
                 _accounts.Add(acc);
             }
         }
+
     }
 }
